@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Dashboard</title>
+
+<style>
+body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto;
+    background:linear-gradient(180deg,#f7f7fb,#eef1f6);
+    display:flex;
+    justify-content:center;
+}
+
+.app{
+    width:380px;
+    min-height:100vh;
+    padding:20px;
+}
+
+.title{
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+/* WEATHER */
+.weather{
+    background:rgba(255,255,255,0.75);
+    backdrop-filter: blur(10px);
+    border-radius:20px;
+    padding:14px;
+    text-align:center;
+    font-weight:600;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+}
+
+/* BUTTON */
+.btn{
+    width:100%;
+    padding:14px;
+    margin-top:10px;
+    border:none;
+    border-radius:20px;
+    background:white;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 14px rgba(0,0,0,0.08);
+}
+
+/* CARD */
+.card{
+    background:rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    border-radius:20px;
+    padding:14px;
+    margin-top:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+}
+
+/* GRID */
+.grid{
+    margin-top:15px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.box{
+    height:95px;
+    border-radius:18px;
+    background:rgba(255,255,255,0.8);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 14px rgba(0,0,0,0.06);
+}
+
+/* MODAL */
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    align-items:center;
+    justify-content:center;
+}
+
+.modal-content{
+    width:320px;
+    background:white;
+    padding:16px;
+    border-radius:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="title">HOŞ GELDİNİZ ADA HANIM</div>
+
+    <!-- WEATHER -->
+    <div class="weather" id="weatherBox">
+        🌤 Hava yükleniyor...
+    </div>
+
+    <!-- LINKS -->
+    <button class="btn" onclick="openAI()">🤖 Hukuk AI</button>
+    <button class="btn" onclick="openDrive()">📁 Drive</button>
+    <button class="btn" onclick="openSpotify()">🎵 Spotify</button>
+
+    <!-- FLASHCARD -->
+    <div class="card">
+        <h3>📚 Hızlı notlar </h3>
+        <div>Doğru: <span id="correct">0</span> | Yanlış: <span id="wrong">0</span></div>
+
+        <button class="btn" onclick="openAdd()">➕ Not Ekle</button>
+        <button class="btn" onclick="startQuiz()">🎯 Quiz</button>
+    </div>
+
+    <!-- POMODORO -->
+    <div class="card">
+        <h3>⏱ Pomodoro</h3>
+        <div id="mode">Ders</div>
+        <div style="font-size:36px" id="time">50:00</div>
+        <div>Streak: <span id="streak">0</span></div>
+
+        <button class="btn" onclick="startTimer()">Başlat</button>
+        <button class="btn" onclick="pauseTimer()">Dur</button>
+        <button class="btn" onclick="resetTimer()">Reset</button>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid">
+        <div class="box" onclick="openAdd()">Not Ekle</div>
+        <div class="box" onclick="nextQuestion()">Soru</div>
+        <div class="box" onclick="markCorrect()">Doğru</div>
+        <div class="box" onclick="markWrong()">Yanlış</div>
+    </div>
+
+</div>
+
+<!-- MODAL -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <h3>Not Ekle</h3>
+
+        <input id="q" placeholder="Soru" style="width:100%;padding:8px;margin:5px 0">
+        <input id="a" placeholder="Cevap" style="width:100%;padding:8px;margin:5px 0">
+
+        <button class="btn" onclick="addCard()">Kaydet</button>
+        <button class="btn" onclick="closeAdd()">Kapat</button>
+    </div>
+</div>
+
+<script>
+
+/* LINKS */
+function openAI(){window.open("https://chat.openai.com")}
+function openDrive(){window.open("https://drive.google.com")}
+function openSpotify(){window.open("https://open.spotify.com")}
+
+/* WEATHER (placeholder ready for API) */
+function loadWeather(){
+    document.getElementById("weatherBox").innerText="🌤 Hava: Güneşli 25°C";
+}
+loadWeather();
+
+/* ================= FLASHCARD ================= */
+
+let correct=0;
+let wrong=0;
+
+function getCards(){
+    return JSON.parse(localStorage.getItem("cards")||"[]");
+}
+
+function saveCards(d){
+    localStorage.setItem("cards",JSON.stringify(d));
+}
+
+function openAdd(){
+    document.getElementById("addModal").style.display="flex";
+}
+
+function closeAdd(){
+    document.getElementById("addModal").style.display="none";
+}
+
+function addCard(){
+    let q=document.getElementById("q").value;
+    let a=document.getElementById("a").value;
+    if(!q||!a)return;
+
+    let d=getCards();
+    d.push({q,a});
+    saveCards(d);
+
+    document.getElementById("q").value="";
+    document.getElementById("a").value="";
+    closeAdd();
+}
+
+/* QUIZ */
+function startQuiz(){
+    nextQuestion();
+}
+
+function nextQuestion(){
+    let d=getCards();
+    if(d.length<1)return alert("Not yok");
+
+    let r=d[Math.floor(Math.random()*d.length)];
+
+    let ans=prompt(r.q);
+
+    if(ans && ans.toLowerCase()===r.a.toLowerCase()){
+        correct++;
+        alert("Doğru!");
+    }else{
+        wrong++;
+        alert("Yanlış: "+r.a);
+    }
+
+    updateScore();
+}
+
+function markCorrect(){
+    correct++;
+    updateScore();
+}
+
+function markWrong(){
+    wrong++;
+    updateScore();
+}
+
+function updateScore(){
+    document.getElementById("correct").innerText=correct;
+    document.getElementById("wrong").innerText=wrong;
+}
+
+/* ================= POMODORO ================= */
+
+let work=50*60;
+let breakT=10*60;
+let time=work;
+let timer=null;
+let isBreak=false;
+let streak=0;
+
+function updateTime(){
+    let m=Math.floor(time/60);
+    let s=time%60;
+
+    document.getElementById("time").innerText=
+    `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+
+    document.getElementById("mode").innerText=isBreak?"Mola":"Ders";
+}
+
+function startTimer(){
+    if(timer)return;
+
+    timer=setInterval(()=>{
+
+        if(time>0){
+            time--;
+            updateTime();
+        }else{
+            clearInterval(timer);
+            timer=null;
+
+            if(!isBreak){
+                isBreak=true;
+                time=breakT;
+                streak++;
+                document.getElementById("streak").innerText=streak;
+                alert("Ders bitti → mola");
+            }else{
+                isBreak=false;
+                time=work;
+                alert("Mola bitti → ders");
+            }
+
+            updateTime();
+            startTimer();
+        }
+
+    },1000);
+}
+
+function pauseTimer(){
+    clearInterval(timer);
+    timer=null;
+}
+
+function resetTimer(){
+    pauseTimer();
+    isBreak=false;
+    time=work;
+    updateTime();
+}
+
+updateTime();
+
+</script>
+
+</body>
+</html>
